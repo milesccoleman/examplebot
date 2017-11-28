@@ -1,0 +1,2 @@
+# examplebot
+bot page
