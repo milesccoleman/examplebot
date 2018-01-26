@@ -1,0 +1,2665 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="yes"?>
+<?xml-stylesheet href="https://www.issuecrawler.net/lib/css/svg_map.css" type="text/css"?>
+<svg viewBox="0 0 1648 1410" width="1000" height="765"
+				xmlns="http://www.w3.org/2000/svg"
+				xmlns:xlink="http://www.w3.org/1999/xlink"
+				xmlns:text="http://xmlns.graougraou.com/svg/text/">
+				
+<defs>
+
+
+<style type="text/css">
+<![CDATA[
+
+.lines {
+	fill: none;
+	stroke: #000000;
+	stroke-dasharray: 1;
+}
+
+.off {
+	display: none;
+}
+
+.events {
+	opacity: 0;
+}
+
+.over {
+	fill: none;
+	stroke: #A3A3A3;
+}
+
+.on {
+	fill: black;
+	stroke: #5A5A5A;
+	fill-opacity: 0.4;
+}
+
+.signs {
+	fill: none;
+	stroke: #000000;
+	stroke-width: 1px;	
+}
+
+
+.siteName{
+	font-family: Verdana;
+	font-size: 14px;
+}
+
+.siteNamePeriphery{
+	font-family: Verdana;
+	font-size: 13px;
+}
+
+.MapTitle{
+	font-family: Verdana;
+	font-size: 17px;
+	font-weight: bold;
+}
+
+.MapBoxLabel{
+	font-family: Verdana;
+	font-size: 14px;
+	font-weight: bold;
+}
+
+.MapBoxNote{
+	font-family: Verdana;
+	font-size: 10px;
+}
+
+.MapStatsLink{
+	font-family: Verdana;
+	font-size: 12px;
+	font-weight: bold;
+}
+
+.NodeLabel{
+	font-family: Verdana;
+	font-size: 14px;
+	font-weight: bold;
+}
+
+.NodeDefault{
+	font-family: Verdana;
+	font-size: 12px;
+}
+
+.NodeDefaultBold{
+	font-family: Verdana;
+	font-size: 12px;
+	font-weight: bold;
+}
+
+.NodeDefaultUnderline{
+	font-family: Verdana;
+	font-size: 12px;
+        text-decoration: underline;
+}
+
+.NodeDefaultItalic{
+	font-family: Verdana;
+	font-size: 12px;
+	font-style: italic;
+}
+
+.MapMarker{
+	stroke: #cccccc;
+	stroke-width: 1;
+}
+
+.LineLink{
+	stroke: #cccccc;;
+	stroke-width: 1;
+}
+
+
+]]>
+</style>
+	
+	<script><![CDATA[
+
+	
+	function mouseover(evt) {
+	    var circle = document.getElementByID(circle_id);
+	}
+	
+	function alter(type, evt, item_id) 
+	{
+	    var colour;
+	
+	    var svgDoc = evt.target.ownerDocument;
+	    var svgObj = svgDoc.getElementById(item_id)
+	
+	    switch (type)
+		{
+		case 'mouseover':
+		    colour = "red";
+			
+		    break;
+		case 'mouseout':
+		    colour = "grey";
+		    break;
+		}
+		if (svgObj != null)
+			{
+	   		svgObj.style.setProperty("stroke",colour,"important");
+	   }
+	}
+	
+	// todo make native firefox svg compatible
+	function alter_per(evt, item_id) 
+	{
+	    var colour, showhide;
+	    var svgDoc = evt.target.ownerDocument;
+	    var svgObj = svgDoc.getElementById("circle"+item_id);
+	    var outlinks = svgDoc.getElementById("outlinks_"+item_id);
+	    
+	    var keepon = outlinks.getAttribute("keepon");
+	    switch (evt.getType())
+		{
+		case 'mouseover':
+		    //alert("keepon: " + keepon);
+		    if (keepon != "on") {
+	        svgObj.style.setProperty("stroke","red","important");
+	        outlinks.setAttribute("display", "inline");
+	  	  }
+		    break;
+		    
+		case 'click':
+	  	  //alert("keepon: " + keepon);
+		    if (keepon == "on") {
+		      keepon = "off";
+	        svgObj.style.setProperty("stroke", "none", "important");
+	        outlinks.setAttribute("display", "none");
+		    }
+		    else {
+		      keepon = "on";
+	        svgObj.style.setProperty("stroke","red","important");
+	        outlinks.setAttribute("display", "inline");
+		    }
+	      outlinks.setAttribute("keepon", keepon);
+		    break;
+		    
+		case 'mouseout':
+		    //alert("keepon: " + keepon);
+		    if (keepon != "on") {
+	        svgObj.style.setProperty("stroke","none","important");
+	        outlinks.setAttribute("display", "none");
+	  	  }
+		    break;
+		}
+	    
+	    
+	}
+	
+	//generic function for changing the display status of an object
+	function layerOnOff(layerName) {
+		var layerObj = document.getElementById(layerName);
+		
+		var layerStatus = layerObj.style.getPropertyValue("display");
+		
+		if(layerStatus == "show"){
+			layerObj.style.setProperty('display','none','important');
+		}
+		else{
+			layerObj.style.setProperty('display','block','important');
+		}
+	}
+
+	function statsOnOff(nSite){
+		if(linksDisplayed){
+			statsOnOff_linksOn(nSite);
+		}
+		else{
+			statsOnOff_linksOff(nSite);
+			resetNodeDisplayStatus();
+		}
+	}
+
+	//current active site
+	var siteActiv = -1;
+	var siteActivState = -1;
+
+	//function for changing the display status of a node statistics data when links are on
+	function statsOnOff_linksOn(nSite){
+		var layerObj;
+	
+		if(siteActiv >= 0){
+			//previous node
+			//hide stats
+			layerObj = document.getElementById("site"+siteActiv);
+			
+			layerObj.style.setProperty('display','none','important');
+		
+			//un-bold name
+			layerObj = document.getElementById("siteName"+siteActiv);
+			
+			layerObj.style.setProperty("font-weight","normal","important");
+		
+			//reset links page number
+			showNodesSet(1, 0);
+			showNodesSet(2, 0);
+			
+			//change circle profile
+			layerObj = document.getElementById("siteCircle"+siteActiv);
+			
+			layerObj.style.setProperty('fill',layerObj.style.getPropertyValue('stroke'),"important");
+			layerObj.style.setProperty('stroke',"grey","important");
+			layerObj.style.setProperty("stroke-width","1","important");
+		}
+	
+		//save site number
+		siteActiv = nSite;
+		
+		//current node
+		//show stats
+		layerObj = document.getElementById("site"+nSite);
+		
+		layerObj.style.setProperty('display','block','important');
+	
+		//bold name
+		layerObj = document.getElementById("siteName"+nSite);
+		
+		layerObj.style.setProperty("font-weight","bold","important");
+	
+		//change circle profile
+		layerObj = document.getElementById("siteCircle"+nSite);
+		
+		layerObj.style.setProperty("stroke",layerObj.style.getPropertyValue("fill"),"important");
+		layerObj.style.setProperty("fill","#ffffff","important");
+		layerObj.style.setProperty("stroke-width","4","important");
+
+		//hide & translate links to network
+		layerObj = document.getElementById("site"+siteActiv+"_Links1");
+		
+		layerObj.style.setProperty('display','none','important');
+		layerObj.setAttribute("transform", "translate(0,0)");
+
+		//show & translate links from network
+		layerObj = document.getElementById("site"+siteActiv+"_Links2");
+		
+		layerObj.style.setProperty('display','block','important');
+		layerObj.setAttribute("transform", "translate(0,0)");
+
+		//show URL links to network
+		layerObj = document.getElementById("site"+siteActiv+"_Links_URL1");
+		
+		layerObj.style.setProperty('display','block','important');
+		//layerObj.setAttribute("transform", "translate(0,0)");
+
+		//hide URL links from network
+		layerObj = document.getElementById("site"+siteActiv+"_Links_URL2");
+		
+		layerObj.style.setProperty('display','none','important');
+		//layerObj.setAttribute("transform", "translate(0,0)");
+
+		//modify statistics panel
+		layerObj = document.getElementById("statistics_panel");
+		layerObj.style.setProperty('display','block','important');
+		layerObj.setAttribute("height", 155+node_link_stats[siteActiv]['from_net']);
+
+		//show statistics headline
+		layerObj = document.getElementById("statistics_headline");
+		layerObj.style.setProperty('display','block','important');
+
+		//translate save panel
+		layerObj = document.getElementById("save_panel");
+		if(layerObj) {
+			layerObj.setAttribute("transform", "translate(0,-"+(550-155-node_link_stats[siteActiv]['from_net'])+")");
+		}
+	}
+	
+	//function for changing the display status of a node statistics data when links are off
+	function statsOnOff_linksOff(nSite){
+		var layerObj;
+		var oldSiteActiv = siteActiv;
+		var changeSite = true;
+		
+		if((siteActiv >= 0) && (siteActiv != nSite)){
+			siteActiv = nSite;
+			siteActivState = 1;
+		}
+		else{
+			if(siteActiv == -1){
+				siteActiv = nSite;
+				siteActivState = 1;
+			}
+			else{
+				changeSite = false;
+				
+				siteActivState++;
+				if(siteActivState == 5){
+					siteActivState = 1;
+				}
+			}
+		}
+		
+		if(changeSite){
+			//
+			//change status of the previous node
+			//
+
+			if(oldSiteActiv >= 0){
+				//hide stats
+				layerObj = document.getElementById("site"+oldSiteActiv);
+				
+				layerObj.style.setProperty('display','none','important');
+		
+				//hide links 1
+				layerObj = document.getElementById("site"+oldSiteActiv+"_Links1");
+				
+				layerObj.style.setProperty('display','none','important');
+	
+				//hide links 2
+				layerObj = document.getElementById("site"+oldSiteActiv+"_Links2");
+				
+				layerObj.style.setProperty('display','none','important');
+	
+				//hide URL links 1
+				layerObj = document.getElementById("site"+siteActiv+"_Links_URL1");
+				
+				layerObj.style.setProperty('display','none','important');
+
+				//hide URL links 2
+				layerObj = document.getElementById("site"+siteActiv+"_Links_URL2");
+				
+				layerObj.style.setProperty('display','none','important');
+
+				//reset links page number
+				var savedSiteActiv = siteActiv;
+				siteActiv = oldSiteActiv;
+				showNodesSet(1, 0);
+				showNodesSet(2, 0);
+				siteActiv = savedSiteActiv;
+	
+				//un-bold name
+				layerObj = document.getElementById("siteName"+oldSiteActiv);
+				
+				layerObj.style.setProperty("font-weight","normal","important");
+		
+				//change circle profile
+				layerObj = document.getElementById("siteCircle"+oldSiteActiv);
+				
+				layerObj.style.setProperty('fill',layerObj.style.getPropertyValue('stroke'),"important");
+				layerObj.style.setProperty('stroke',"grey","important");
+				layerObj.style.setProperty("stroke-width","1","important");
+			}
+
+			//
+			//change status of the new active node
+			//
+
+			//show stats
+			layerObj = document.getElementById("site"+siteActiv);
+			
+			layerObj.style.setProperty('display','block','important');
+		
+			//bold name
+			layerObj = document.getElementById("siteName"+siteActiv);
+			
+			layerObj.style.setProperty("font-weight","bold","important");
+		
+			//change circle profile
+			layerObj = document.getElementById("siteCircle"+siteActiv);
+			
+			layerObj.style.setProperty("stroke",layerObj.style.getPropertyValue("fill"),"important");
+			layerObj.style.setProperty("fill","#ffffff","important");
+			layerObj.style.setProperty("stroke-width","4","important");
+		}
+
+		//reset links page number
+		showNodesSet(1, 0);
+		showNodesSet(2, 0);
+
+		//hide URL links 1
+		layerObj = document.getElementById("site"+siteActiv+"_Links_URL1");
+		
+		layerObj.style.setProperty('display','none','important');
+
+		//hide URL links 2
+		layerObj = document.getElementById("site"+siteActiv+"_Links_URL2");
+		
+		layerObj.style.setProperty('display','none','important');
+
+		switch(siteActivState){
+			case 1:
+				//show&translate links 1
+				layerObj = document.getElementById("site"+siteActiv+"_Links1");
+				
+				layerObj.style.setProperty('display','block','important');
+				layerObj.setAttribute("transform", "translate(0,0)");
+	
+				//show&translate links 2
+				layerObj = document.getElementById("site"+siteActiv+"_Links2");
+				
+				layerObj.style.setProperty('display','block','important');
+				layerObj.setAttribute("transform", "translate(0,"+node_link_stats[siteActiv]['to_net']+")");
+
+				//modify statistics panel
+				layerObj = document.getElementById("statistics_panel");
+				
+				layerObj.style.setProperty('display','block','important');
+				layerObj.setAttribute("height", 155+node_link_stats[siteActiv]['to_net']+node_link_stats[siteActiv]['from_net']);
+
+				//show statistics headline
+				layerObj = document.getElementById("statistics_headline");
+				
+				layerObj.style.setProperty('display','block','important');
+
+				//translate save panel
+				layerObj = document.getElementById("save_panel");
+				layerObj.setAttribute("transform", "translate(0,-"+(550-155-node_link_stats[siteActiv]['to_net']-node_link_stats[siteActiv]['from_net'])+")");
+
+				//show all the links on the map
+				for(var i=0; i< node_links.length; i++){
+					if((node_links[i]['x1'] == siteActiv) || (node_links[i]['x2'] == siteActiv)){
+						layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+						
+						layerObj.style.setProperty('display','block','important');
+					}
+					else{
+						layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+						
+						layerObj.style.setProperty('display','none','important');
+					}
+				}
+
+				break;
+
+			case 2:
+				//hide links 1
+				layerObj = document.getElementById("site"+siteActiv+"_Links1");
+				
+				layerObj.style.setProperty('display','none','important');
+	
+				//show links 2
+				layerObj = document.getElementById("site"+siteActiv+"_Links2");
+				
+				layerObj.style.setProperty('display','block','important');
+
+				//translate links 2
+				layerObj = document.getElementById("site"+siteActiv+"_Links2");
+				layerObj.setAttribute("transform", "translate(0,0)");
+
+				//show URL links 1
+				layerObj = document.getElementById("site"+siteActiv+"_Links_URL1");
+				
+				layerObj.style.setProperty('display','block','important');
+
+				//modify statistics panel
+				layerObj = document.getElementById("statistics_panel");
+				layerObj.setAttribute("height", 155+node_link_stats[siteActiv]['from_net']);
+
+				//translate save panel
+				layerObj = document.getElementById("save_panel");
+				layerObj.setAttribute("transform", "translate(0,-"+(550-155-node_link_stats[siteActiv]['from_net'])+")");
+
+				//show only the links from the network on the map
+				for(var i=0; i< node_links.length; i++){
+					if((node_links[i]['x2'] == siteActiv) || ((node_links[i]['x1'] == siteActiv) && (node_links[i]['one_way']==0))){
+						layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+						
+						layerObj.style.setProperty('display','block','important');
+					}
+					else{
+						layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+						
+						layerObj.style.setProperty('display','none','important');
+					}
+				}
+
+				break;
+
+			case 3:
+				//show links 1
+				layerObj = document.getElementById("site"+siteActiv+"_Links1");
+				
+				layerObj.style.setProperty('display','block','important');
+	
+				//hide links 2
+				layerObj = document.getElementById("site"+siteActiv+"_Links2");
+				
+				layerObj.style.setProperty('display','none','important');
+
+				//show URL links 2
+				layerObj = document.getElementById("site"+siteActiv+"_Links_URL2");
+				
+				layerObj.style.setProperty('display','block','important');
+
+				//modify statistics panel
+				layerObj = document.getElementById("statistics_panel");
+				layerObj.setAttribute("height", 155+node_link_stats[siteActiv]['to_net']);
+
+				//translate save panel
+				layerObj = document.getElementById("save_panel");
+				layerObj.setAttribute("transform", "translate(0,-"+(550-155-node_link_stats[siteActiv]['to_net'])+")");
+
+				//show only the links to the network on the map
+				for(var i=0; i< node_links.length; i++){
+					if((node_links[i]['x1'] == siteActiv) || ((node_links[i]['x2'] == siteActiv) && (node_links[i]['one_way']==0))){
+						layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+						
+						layerObj.style.setProperty('display','block','important');
+					}
+					else{
+						layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+						
+						layerObj.style.setProperty('display','none','important');
+					}
+				}
+
+				break;
+
+			case 4:
+				//hide links 1
+				layerObj = document.getElementById("site"+siteActiv+"_Links1");
+				
+				layerObj.style.setProperty('display','none','important');
+	
+				//hide links 2
+				layerObj = document.getElementById("site"+siteActiv+"_Links2");
+				
+				layerObj.style.setProperty('display','none','important');
+
+				//modify statistics panel
+				layerObj = document.getElementById("statistics_panel");
+				
+				layerObj.style.setProperty('display','none','important');
+				//layerObj.setAttribute("height", 140);
+
+				//hide statistics headline
+				layerObj = document.getElementById("statistics_headline");
+				
+				layerObj.style.setProperty('display','none','important');
+
+				//translate save panel
+				layerObj = document.getElementById("save_panel");
+				layerObj.setAttribute("transform", "translate(0,-"+555+")");
+
+				//hide the links
+				for(var i=0; i< node_links.length; i++){
+					layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+					
+					layerObj.style.setProperty('display','none','important');
+				}
+
+				//
+				//turn off selected node
+				//
+				//un-bold name
+				layerObj = document.getElementById("siteName"+siteActiv);
+				
+				layerObj.style.setProperty("font-weight","normal","important");
+			
+				//change circle profile
+				layerObj = document.getElementById("siteCircle"+siteActiv);
+				
+				layerObj.style.setProperty('fill',layerObj.style.getPropertyValue('stroke'),"important");
+				layerObj.style.setProperty('stroke',"grey","important");
+				layerObj.style.setProperty("stroke-width","1","important");
+	
+				//hide stats
+				layerObj = document.getElementById("site"+siteActiv);
+				
+				layerObj.style.setProperty('display','none','important');
+				
+				siteActiv = -1;
+
+				break;
+		}
+	}
+	
+	//current links display status
+	var linksDisplayed = true;
+
+	//function for changing the links from/to panel that is displayed
+	function linksStatsOnOff(nLinks){
+		var layerObj;
+		var linksActive = 0;
+		var linksActiveStr = "";
+
+		if(linksDisplayed){
+			layerObj = document.getElementById("site" + siteActiv + "_Links1");
+	
+			if(layerObj.style.getPropertyValue('display') == 'block'){
+				linksActive = 1;
+				linksActiveStr = "from_net";
+			}
+			else{
+				linksActive = 2;
+				linksActiveStr = "to_net";
+			}
+	
+			//reset links page number
+			showNodesSet(1, 0);
+			showNodesSet(2, 0);
+	
+			//show links
+			layerObj = document.getElementById("site"+siteActiv+"_Links"+(3-linksActive));
+			
+			layerObj.style.setProperty('display','block','important');
+	
+			//hide links
+			layerObj = document.getElementById("site"+siteActiv+"_Links"+linksActive);
+			
+			layerObj.style.setProperty('display','none','important');
+	
+			//show URL links
+			layerObj = document.getElementById("site"+siteActiv+"_Links_URL"+linksActive);
+			
+			layerObj.style.setProperty('display','block','important');
+	
+			//hide URL
+			layerObj = document.getElementById("site"+siteActiv+"_Links_URL"+(3-linksActive));
+			
+			layerObj.style.setProperty('display','none','important');
+	
+			//modify statistics panel
+			layerObj = document.getElementById("statistics_panel");
+			layerObj.setAttribute("height", 155+node_link_stats[siteActiv][linksActiveStr]);
+	
+			//translate save panel
+			layerObj = document.getElementById("save_panel");
+			layerObj.setAttribute("transform", "translate(0,-"+(550-155-node_link_stats[siteActiv][linksActiveStr])+")");
+		}
+		else{
+			switch(nLinks){
+				case 1:
+					siteActivState = 2;
+					break;
+
+				case 2:
+					siteActivState = 1;
+					break;
+			}
+			
+			statsOnOff(siteActiv);
+		}
+	}
+	
+	//turning the link on/off
+	function linksOnOff(){
+		for(var i=0; i< node_links.length; i++){
+			layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+			
+			
+			if(linksDisplayed){
+				layerObj.style.setProperty('display','none','important');
+			}
+			else{
+				layerObj.style.setProperty('display','block','important');
+			}
+		}
+		
+		if(linksDisplayed){
+			linksDisplayed = false;
+		}
+		else{
+			linksDisplayed = true;
+		}
+
+		if(!linksDisplayed){
+			if(siteActiv > -1){
+				//hide links URLs
+				layerObj = document.getElementById("site"+siteActiv+"_Links_URL1");
+				
+				layerObj.style.setProperty('display','none','important');
+	
+				layerObj = document.getElementById("site"+siteActiv+"_Links_URL2");
+				
+				layerObj.style.setProperty('display','none','important');
+	
+				//display the first state of the stats info
+				siteActivState = 0;
+				statsOnOff_linksOff(siteActiv);
+			}
+		}
+		else{
+			if(siteActiv > -1){
+				//display the stats info
+				statsOnOff_linksOn(siteActiv);
+				
+				//reset node display status
+				for(var i=0; i< nodes.length; i++){
+					layerObj = document.getElementById("siteCircle"+i);
+					
+					layerObj.style.setProperty('display','block','important');
+	
+					layerObj = document.getElementById("siteName"+i);
+					
+					layerObj.style.setProperty('display','block','important');
+	
+					node_types[nodes[i].substr(1)] = 1;
+				}
+			}
+		}
+	}
+
+	//current active node type
+	var nodeTypeActiv = "";
+	var nodeTypeActivState = -1;
+
+	//handles the onclick event for legend elements
+	function legendClick(node_type){
+		if(linksDisplayed){
+			legendClick_LinksOn(node_type);
+		}
+		else{
+			legendClick_LinksOff(node_type);
+		}
+	}
+
+	//handles the onclick event for legend elements when links are on
+	function legendClick_LinksOn(node_type){
+		var layerObj;
+		
+		if((nodeTypeActiv != "") && (nodeTypeActiv != node_type)){
+			nodeTypeActiv = node_type;
+			nodeTypeActivState = 1;
+		}
+		else{
+			if(nodeTypeActiv == ""){
+				nodeTypeActiv = node_type;
+				nodeTypeActivState = 1;
+			}
+			else{
+				nodeTypeActivState++;
+				if(nodeTypeActivState == 5){
+					nodeTypeActivState = 1;
+				}
+			}
+		}
+
+		switch(nodeTypeActivState){
+			case 1:
+				for(var i=0; i< node_links.length; i++){
+					layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+					
+
+					if(node_links[i]['type'].indexOf('.'+node_type+';') != -1){
+						layerObj.style.setProperty('display','block','important');
+					}
+					else{
+						layerObj.style.setProperty('display','none','important');
+					}
+				}
+			
+				break
+
+			case 2:
+				for(var i=0; i< node_links.length; i++){
+					layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+					
+					if(node_links[i]['type'].indexOf('.'+node_type+';') == 0){
+						layerObj.style.setProperty('display','block','important');
+					}
+					else{
+						layerObj.style.setProperty('display','none','important');
+					}
+				}
+			
+				break
+
+			case 3:
+				for(var i=0; i< node_links.length; i++){
+					layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+					
+
+					if(node_links[i]['type'].lastIndexOf('.'+node_type+';') > 0){
+						layerObj.style.setProperty('display','block','important');
+					}
+					else{
+						layerObj.style.setProperty('display','none','important');
+					}
+				}
+			
+				break
+
+			case 4:
+				//display all the links
+				for(var i=0; i< node_links.length; i++){
+					layerObj = document.getElementById("siteLink_"+node_links[i]['x1']+'_'+node_links[i]['x2']);
+					
+					layerObj.style.setProperty('display','block','important');
+				}
+			
+				break
+		}
+	}
+
+	//handles the onclick event for legend elements when links are off
+	function legendClick_LinksOff(node_type){
+		var layerObj, layerObjText, layerObjLink;
+		for(var i=0; i < nodes.length; i++){
+			layerObj = document.getElementById("siteCircle"+i);
+			
+
+			//get node display status
+			displayStatus = layerObj.style.getPropertyValue('display'); 
+			if(nodes[i] == ('.'+node_type)){
+				if(layerObj.style.getPropertyValue("display") == "none"){
+					displayStatus = "block";
+				}
+				else{
+					hideNode = true;
+					for(var j=0; j < node_links.length; j++){
+						if((node_links[j]['x1'] == i) || (node_links[j]['x2'] == i)){
+							layerObjLink = document.getElementById("siteLink_"+node_links[j]['x1']+'_'+node_links[j]['x2']);
+							
+							if(layerObjLink.style.getPropertyValue("display") == "block"){
+								hideNode = false;
+							}
+						}
+					}
+
+					displayStatus = "none";
+					if(!hideNode){
+						displayStatus = "block";
+					}
+				}
+			}
+
+			//change node circle status
+			layerObj.style.setProperty("display",displayStatus,"important");
+
+			//change node label status
+			layerObjText = document.getElementById("siteName"+i);
+			
+			layerObjText.style.setProperty("display", displayStatus,"important");
+		}
+
+		if(node_types[''+node_type] == 1){
+			node_types[''+node_type] = 0;
+		}
+		else{
+			node_types[''+node_type] = 1;
+		}
+	}
+	
+	function resetNodeDisplayStatus(){
+		var layerObj, layerObjLink;
+
+		for(var i=0; i < nodes.length; i++){
+			if(node_types[nodes[i].substr(1)] == 0){
+				hideNode = true;
+				for(var j=0; j< node_links.length; j++){
+					if((node_links[j]['x1'] == i) || (node_links[j]['x2'] == i)){
+						layerObjLink = document.getElementById("siteLink_"+node_links[j]['x1']+'_'+node_links[j]['x2']);
+						
+						if(layerObjLink.style.getPropertyValue("display") == "block"){
+							hideNode = false;
+						}
+					}
+				}
+
+				if(hideNode){
+					layerObj = document.getElementById("siteCircle"+i);
+					
+					layerObj.style.setProperty('display','none','important');
+	
+					layerObj = document.getElementById("siteName"+i);
+					
+					layerObj.style.setProperty('display','none','important');
+				}
+				else{
+					layerObj = document.getElementById("siteCircle"+i);
+					
+					layerObj.style.setProperty('display','block','important');
+	
+					layerObj = document.getElementById("siteName"+i);
+					
+					layerObj.style.setProperty('display','block','important');
+				}
+			}
+		}
+	}
+
+	var linksCurrentPage = 0;
+	
+	function showNodesSet(nSet, nPage){
+		var layerObj;
+		var subElements;
+		var subElement;
+		var linksTitle;
+		
+		switch(nSet){
+			case 1:
+				linksTitle = "Links to network";
+				break
+			case 2:
+				linksTitle = "Links from network";
+				break
+		}
+		
+		linksCurrentPage = linksCurrentPage + nPage;
+	
+		if((linksCurrentPage*20+1) > link_nodes[siteActiv][nSet].length){
+			linksCurrentPage -= 1;
+		}
+
+		if(nPage == 0){
+			linksCurrentPage = 0;
+		}
+
+		if(linksCurrentPage == -1){
+			linksCurrentPage = 0;
+		}
+
+		if(link_nodes[siteActiv][nSet].length > 0){
+			layerObj = document.getElementById("site"+siteActiv+"_Links"+nSet);
+			subElements = layerObj.childNodes;
+	
+			var textElem = 0;
+			var textElemNo = linksCurrentPage*20+1;
+			var displayURLLinks = false;
+			var linkTextElem = 1;
+			for (var i=0; i < subElements.length ; i++){
+				subElement = subElements.item(i);
+				if(subElement == "[object SVGTextElement]"){
+					//change node names
+					if(textElem > 0){
+						textContent = subElement.firstChild;
+						
+						if(textElemNo < link_nodes[siteActiv][nSet].length){
+							textContent.nodeValue = link_nodes[siteActiv][nSet][textElemNo];
+						}
+						else{
+							textContent.nodeValue = "";
+						}
+	
+						textElemNo++;
+					}
+					else{
+						textContent = subElement.firstChild;
+						textContent.nodeValue = linksTitle+" ("+(linksCurrentPage*20+1)+" - "+((linksCurrentPage+1)*20)+")";
+					}
+					
+					textElem++;
+				}
+	/*			else{
+					if(subElement == "[object SVGAElement]"){
+						//change previous|next links
+						aElements = subElement.firstChild;
+						aTextElement = aElements.firstChild;
+	
+						if(linksCurrentPage == 0){
+							if((linkTextElem == 1) || (linkTextElem == 2)){
+								aTextElement.nodeValue = "";
+							}
+						}
+						else{
+							if(linkTextElem == 1){
+								aTextElement.nodeValue = "Previous";
+							}
+							if(linkTextElem == 2){
+								aTextElement.nodeValue = "|";
+							}
+						}
+	
+						if(((linksCurrentPage+1)*20+1) > link_nodes[nSet].length){
+							if((linkTextElem == 2) || (linkTextElem == 3)){
+								aTextElement.nodeValue = "";
+							}
+						}
+						else{
+							if(linkTextElem == 2){
+								aTextElement.nodeValue = "|";
+							}
+							if(linkTextElem == 3){
+								aTextElement.nodeValue = "Next";
+							}
+						}
+	
+						linkTextElem++;
+					}
+				}
+	*/
+			}
+		}
+	}
+	
+	//generic function for activating a drop-down menu
+	function activateMenu(menuNo){
+		layerObj = document.getElementById("menu"+menuNo);
+		
+		layerObj.style.setProperty('display','block','important');
+	}
+	
+	//generic function for de-activating a drop-down menu
+	function deactivateMenu(menuNo){
+		layerObj = document.getElementById("menu"+menuNo);
+		
+		layerObj.style.setProperty('display','none','important');
+	}
+
+	//active drop-down menu option
+	var menuOptionActiv = new Array();
+	menuOptionActiv[1] = -1;
+	menuOptionActiv[3] = -1;
+	menuOptionActiv[4] = -1;
+
+	//function for change the bgcolor of the active option from the drop-down menu
+	function hooverOption(menuNo, optNo){
+		if(menuOptionActiv[menuNo] > 0){
+			layerObj = document.getElementById("Menu"+menuNo+"Opt"+menuOptionActiv[menuNo]);
+			if(layerObj == "[object SVGRectElement]"){
+				
+				layerObj.style.setProperty("fill","#ffffff","important");
+			}
+		}
+	
+		layerObj = document.getElementById("Menu"+menuNo+"Opt"+optNo);
+		if(layerObj == "[object SVGRectElement]"){
+			
+			layerObj.style.setProperty("fill","#f0f0f0","important");
+			
+			menuOptionActiv[menuNo] = optNo;
+		}
+	}
+	
+	//selected drop-down menu option
+	var menuOptionSel = new Array();
+	menuOptionSel[1] = 1;
+	menuOptionSel[3] = 1;
+	menuOptionSel[4] = 1;
+
+	//function for changing option from the drop-down menu
+	function setOption(menuNo, optNo){
+		if((menuOptionSel[menuNo] < 0) || ((menuOptionSel[menuNo] > 0) && (menuOptionSel[menuNo] != optNo))){
+			changeStatus = true;
+
+			layerObj = document.getElementById("Menu"+menuNo+"OptSel"+menuOptionSel[menuNo]);
+			if(layerObj == "[object SVGTextElement]"){
+				
+				layerObj.style.setProperty('display','none','important');
+			}
+
+			layerObj = document.getElementById("Menu"+menuNo+"OptSel"+optNo);
+			if(layerObj == "[object SVGTextElement]"){
+				
+				layerObj.style.setProperty('display','block','important');
+			
+				if((menuOptionSel[menuNo] < 0) && (optNo == 1)){
+					changeStatus = false;
+				}
+
+				menuOptionSel[menuNo] = optNo;
+			}
+
+			if(changeStatus){
+				if(menuNo == 1){
+					linksOnOff();
+				}
+			}
+		}
+
+		deactivateMenu(menuNo);
+	}
+
+	function saveFile(){
+		var save_link;
+		//var layerObj;
+		var fileType = "SVG";
+		var mapType = "map+legend";
+		var mapStyle = "full";
+
+		//alert(menuOptionSel[3] + ' ' + menuOptionSel[4]);
+
+		switch(menuOptionSel[3]){
+			case 1:
+				fileType = "SVG";
+				break;
+			case 2:
+				fileType = "PNG";
+				break;
+			case 3:
+				fileType = "JPG";
+				break;
+			case 4:
+				fileType = "TIF";
+				break;
+			case 5:
+				fileType = "PDF";
+				break;
+		}
+
+		switch(menuOptionSel[4]){
+			case 1:
+				if(menuOptionSel[3] == 1){
+					mapType = "svg786573";
+				}
+				else{
+					mapType = "svg779319";
+				}
+				mapStyle = "full";
+				break;
+			case 2:
+				mapType = "svg549254";
+				mapStyle = "nodes";
+				break;
+		}
+
+		save_link = "save.php?map_type=cluster&map_style="+mapStyle+"&type="+fileType+"&filename="+mapType;
+		var layerObj = document.getElementById("save_file_link");
+		if(layerObj) layerObj.childNodes.item(0).setAttribute("xlink:href", save_link); 
+	}
+
+	]]></script>
+
+		<script type="text/ecmascript">
+			<![CDATA[
+				function SVG () {
+				}
+				
+				SVG.ns = 'http://www.w3.org/2000/svg';
+			
+				function TextWrap (id, node) {
+					this._id = id;
+					this._node = node;
+					this._string = null;
+					this._x = null;
+					this._y = null;
+					this._width = null;
+					this._font = null;
+					this._size = null;
+					this._align = null;
+					this._quality = null;
+					this._interval = null;
+					this._svg = null;
+					this._lines = null;
+					this._initialized = false;
+					this._construct();
+				}
+				
+				TextWrap.ns = 'http://xmlns.graougraou.com/svg/text/';
+				
+				TextWrap._instances = new Array();
+				
+				TextWrap._init = function () {
+					var elements = document.documentElement.getElementsByTagNameNS(this.ns, 'wrap');
+					for (var i=0; i<elements.length; i++) {
+						this._instances.push( new TextWrap(i, elements.item(i)) );
+					}
+				}
+				
+				/**
+				 *
+				 * Processing methods
+				 *
+				 **/
+				
+				TextWrap.prototype._construct = function () {
+					this._build();
+					this._svg.setAttribute('style', this._node.getAttribute('style'));
+					this._node.normalize();
+					
+					this.setString( this._node.firstChild.data );
+					this.setX( parseInt(this._node.getAttribute('x')) );
+					this.setY( parseInt(this._node.getAttribute('y')) );
+					this.setWidth( parseInt(this._node.getAttribute('width')) );
+					this.setTextAlign( this._svg.style.getPropertyValue('text-align') );
+					this.setFontFamily( this._svg.style.getPropertyValue('font-family') );
+					this.setFontSize( this._svg.style.getPropertyValue('font-size') );
+					this.setTextRendering( this._svg.style.getPropertyValue('text-rendering') );
+					this.setLineInterval( this._svg.style.getPropertyValue('line-interval') );
+				
+					this._splitString();
+					this._layout();
+					this._initialized = true;
+				}
+				
+				TextWrap.prototype._build = function () {
+					var element = document.createElementNS(SVG.ns, 'text');
+					var node = this._node;
+					var nextElement = null;
+					while (node.nextSibling) {
+						if (node.nextSibling.nodeType == 1) {
+							nextElement = node.nextSibling;
+							break;
+						} else {
+							node = node.nextSibling;
+						}
+					}
+					if (nextElement) {
+						var test = this._node.parentNode.insertBefore(element, nextElement);
+					} else {
+						this._node.parentNode.appendChild(element);
+					}
+					element.appendChild(document.createTextNode(''));
+					this._svg = element;
+				}
+				
+				TextWrap.prototype._splitString = function () {
+					this._hide();
+					this._clear();
+					var words = this._string.split(' ');
+					var lines = new Array();
+					var line = new Array();
+					var length = 0;
+					var prevLength = 0;	
+					while (words.length) {
+						var word = words[0];
+						this._svg.firstChild.data = line.join(' ') + ' ' + word;
+						length = this._svg.getComputedTextLength();
+						if (length > this._width) {
+							if (!words.length) {
+								line.push(words[0]);
+							}
+							lines.push( new Line(prevLength, line) );
+							line = new Array();
+						} else {
+							line.push(words.shift());
+						}
+						prevLength = length;
+						if (words.length == 0) {
+							lines.push( new Line(0, line) );
+						}
+					}
+					this._lines = lines;
+				}
+				
+				TextWrap.prototype._layout = function () {
+					this._clear();
+					var lines = (new Array(0)).concat(this._lines);
+					var anchor = 'start';
+					if (this._align == 'center') {
+						anchor = 'middle';	
+					} else if (this._align == 'right') {
+						anchor = 'end';
+					}
+					for (var i=0; i<lines.length; i++) {
+						var x = 0;		
+						line = lines[i]; 
+						this._svg.appendChild( document.createTextNode(' ') );
+						var tspan = document.createElementNS(SVG.ns, 'tspan');
+						tspan.appendChild( document.createTextNode(line._words.join(' ')) ); 
+						if (this._align == 'justify') {
+							var space = (this._width - line._width) / (line._words.length - 1);
+							space = (i != lines.length - 1) ? space : 0;
+							tspan.style.setProperty('wordSpacing', space + 'px', 'important');
+						} else if (this._align == 'center') {
+							anchor = 'middle';
+							x = this._width / 2;
+						} else if (this._align == 'right') {
+							anchor = 'end';
+							x = this._width;
+						}
+						tspan.setAttribute('x', x);
+						tspan.setAttribute('dy', i ? this._interval : '1em');
+						this._svg.appendChild(tspan);
+					}	
+					this._svg.style.setProperty('textAnchor', anchor, 'important');
+					this._show();
+				}
+				
+				/**
+				 *
+				 * Utility methods
+				 *
+				 **/
+				
+				TextWrap.prototype._hide = function () {
+					this._svg.style.setProperty('opacity', '0','important');
+				}
+				
+				TextWrap.prototype._show = function () {
+					this._svg.style.setProperty('opacity', '1','important');
+				}
+				
+				TextWrap.prototype._clear = function () {
+					while (this._svg.hasChildNodes()) {
+						this._svg.removeChild(this._svg.firstChild);
+					}
+					this._svg.appendChild(document.createTextNode(''));
+				}
+				
+				/**
+				 *
+				 * GET / SET
+				 *
+				 * Getters and setters for CSS properties and XML attributes,
+				 * will be updated when mutation events will be implemented
+				 *
+				 **/
+				
+				TextWrap.prototype.getX = function () {
+					return this._x;
+				}
+				
+				TextWrap.prototype.setX = function (x) {
+					if (x != this._x) {
+						this._x = x;
+						this._svg.setAttribute('transform', 'translate(' + this._x + ' ' + this._y + ')');
+					} 
+				}
+				
+				TextWrap.prototype.getY = function () {
+					return this._y;
+				}
+				
+				TextWrap.prototype.setY = function (y) {
+					if (y != this._y) {
+						this._y = y;
+						this._svg.setAttribute('transform', 'translate(' + this._x + ' ' + this._y + ')');
+					} 
+				}
+				
+				TextWrap.prototype.getWidth = function () {
+					return this._width;
+				}
+				
+				TextWrap.prototype.setWidth = function (width) {
+					if (width != this._width) {
+						this._width = width;
+						if (this._initialized) {
+							this._splitString();
+							this._layout();
+						}
+					} 
+				}
+				
+				TextWrap.prototype.getTextAlign = function () {
+					return this._align;
+				}
+				
+				TextWrap.prototype.setTextAlign = function (align) {
+					if (align != this._align) {
+						this._align = align;
+						if (this._initialized) {
+							this._layout();
+						}
+					} 
+				}
+				
+				TextWrap.prototype.getString = function () {
+					return this._string;
+				}
+				
+				TextWrap.prototype.setString = function (string) {
+					if (string != this._string) {
+						this._string = string;
+						if (this._initialized) {
+							this._splitString();
+							this._layout();
+						}
+					} 
+				}
+				
+				TextWrap.prototype.getFontFamily = function () {
+					return this._font;
+				}
+				
+				TextWrap.prototype.setFontFamily = function (font) {
+					if (font != this._font) {
+						this._font = font;
+						this._svg.style.setProperty('font-family',this._font,'important');
+						if (this._initialized) {
+							this._splitString();
+							this._layout();
+						}
+					} 
+				}
+				
+				TextWrap.prototype.getFontSize = function () {
+					return this._size;
+				}
+				
+				TextWrap.prototype.setFontSize = function (size) {
+					if (size != this._size) {
+						this._size = size;
+						this._svg.style.setProperty("font-size", this._size,"important");
+						if (this._initialized) {
+							this._splitString();
+							this._layout();
+						}
+					} 
+				}
+				
+				TextWrap.prototype.getTextRendering = function () {
+					return this._quality;
+				}
+				
+				TextWrap.prototype.setTextRendering = function (quality) {
+					if (quality != this._quality) {
+						this._quality = quality;
+						this._svg.style.setProperty("textRendering",this._quality,"important");
+						if (this._initialized) {
+							this._splitString();
+							this._layout();
+						}
+					} 
+				}
+				
+				TextWrap.prototype.getLineInterval = function () {
+					return this._interval;
+				}
+				
+				TextWrap.prototype.setLineInterval = function (interval) {
+					if (interval != this._interval) {
+						this._interval = interval;
+						if (this._initialized) {
+							var element = this._svg.firstChild;
+							var count = 0;
+							while (element) {
+								if (element.nodeName == 'tspan') {
+									if (count) {
+										element.setAttribute('dy', this._interval);
+									}
+									count++;
+									if (count == this._lines.length) {
+										break;
+									}
+								}
+								element = element.nextSibling;
+							}
+						}
+					}
+				}
+				
+				/*****
+				 *
+				 * Line
+				 *
+				 *****/
+				 
+				function Line (width, words) {
+					this._width = width;
+					this._words = words;
+				}
+		]]>
+		</script>
+
+		<script type="text/ecmascript">
+		<![CDATA[
+
+
+			var active = document.getElementsByTagNameNS(SVG.ns, 'use').item(9);
+		
+			function alignMouseout (evt) {
+				var frame = getFrame(evt);
+				if (active != frame) {
+					frame.setAttribute('class', 'off');
+				}				
+			}
+			function alignMouseover (evt) {
+				var frame = getFrame(evt);
+				if (active != frame) {
+					frame.setAttribute('class', 'over');
+				}				
+			}
+			function alignClick (evt) {
+				var frame = getFrame(evt);
+				var state = frame.getAttribute('class');
+				if (state == 'on' && active != frame) {
+					frame.setAttribute('class', 'off');
+					active = null;
+				} else {
+					if (active) {
+						active.setAttribute('class', 'off');
+					}
+					frame.setAttribute('class', 'on');
+					active = frame;
+					updateLayout(frame);
+				}
+			}
+			function incrementMouseout (evt) {
+				var frame = getFrame(evt);
+				frame.setAttribute('class', 'off');
+			}
+			function incrementMouseover (evt) {
+				var frame = getFrame(evt);
+				frame.setAttribute('class', 'over');
+			}
+			function incrementMousedown (evt) {
+				var frame = getFrame(evt);
+				frame.setAttribute('class', 'on');
+				updateLayout(frame);
+			}
+			function incrementMouseup (evt) {
+				var frame = getFrame(evt);
+				frame.setAttribute('class', 'over');
+			}
+			
+			function getFrame (evt) {
+				return evt.target.parentNode.getElementsByTagNameNS(SVG.ns, 'use').item(0);
+			}
+			function updateLayout (frame) {
+				var text = TextWrap._instances[0];
+				var action = frame.parentNode.getElementsByTagNameNS(SVG.ns, 'use').item(1).getAttribute('xlink:href').substr(1);
+				if (action == 'plus') {
+					text.setFontSize( (parseInt(text.getFontSize()) + 2) + 'px' );
+				} else if (action == 'minus') {
+					text.setFontSize( (parseInt(text.getFontSize()) - 2) + 'px' );
+				} else {
+					text.setTextAlign(action);
+				}
+			}
+		
+		]]>
+		</script>
+
+	<marker refX="0" refY="5" markerWidth="15" markerHeight="10" viewBox="0 0 10 10" orient="auto" style="fill: #cccccc" id="Triangle">
+		<path d="M 0 0 L 10 5 L 0 10 z" />
+	</marker>
+
+	<marker refX="0" refY="5" markerWidth="15" markerHeight="10" viewBox="0 0 10 10" orient="auto" style="fill: #cccccc" id="TriangleStart">
+		<path d="M 10 0 L 0 5 L 10 10 z" />
+	</marker>
+</defs>
+
+<rect x="0" y="0" width="1750" height="1410" fill="#ffffff"/>
+<line id="siteLink_8_7" marker-end="url(#Triangle)" x1="145.63580185356" x2="141.92311259856" y1="568.12554587128" y2="570.23039291116" class="MapMarker" />
+<line id="siteLink_1_18" marker-end="url(#Triangle)" x1="591.37498979391" x2="580.24502651983" y1="566.37775665515" y2="140.38090387049" class="MapMarker" />
+<line id="siteLink_1_17" marker-end="url(#Triangle)" x1="619.13056579844" x2="918.74011223656" y1="577.38438247314" y2="275.10982360982" class="MapMarker" />
+<line id="siteLink_1_15" marker-end="url(#Triangle)" x1="564.51791197275" x2="422.48743121907" y1="625.30325802189" y2="731.98264231944" class="MapMarker" />
+<line id="siteLink_1_13" marker-end="url(#Triangle)" x1="624.88008216938" x2="841.48021588487" y1="588.66492501176" y2="483.93554081759" class="MapMarker" />
+<line id="siteLink_1_12" marker-end="url(#Triangle)" x1="560.54941585317" x2="192.65275317338" y1="583.40621710322" y2="340.84280890147" class="MapMarker" />
+<line id="siteLink_1_11" marker-end="url(#Triangle)" x1="608.49119645883" x2="791.31017765937" y1="638.85531810946" y2="1029.7101001945" class="MapMarker" />
+<line id="siteLink_1_10" marker-end="url(#Triangle)" x1="586.44142579724" x2="550.92534689498" y1="569.25024716755" y2="358.69882047205" class="MapMarker" />
+<line id="siteLink_1_5" marker-end="url(#Triangle)" x1="622.42309644422" x2="959.29289380721" y1="627.6708294288" y2="888.66791708303" class="MapMarker" />
+<line id="siteLink_1_3" marker-end="url(#Triangle)" x1="571.96710717073" x2="345.45476435322" y1="636.43475706317" y2="992.28514164509" class="MapMarker" />
+<line id="siteLink_1_2" marker-end="url(#Triangle)" x1="629.850627672" x2="1034.6833489247" y1="610.04604464924" y2="671.18839919651" class="MapMarker" />
+<line id="siteLink_2_9" marker-end="url(#Triangle)" x1="1081.9358752594" x2="1083.2190833497" y1="657.50321078078" y2="654.05829176554" class="MapMarker" />
+<line id="siteLink_1_7" marker-end="url(#Triangle)" x1="541.87774563618" x2="154.65576813752" y1="603.31985711485" y2="595.15101860325" class="MapMarker" />
+<line id="siteLink_1_8" marker-end="url(#Triangle)" x1="555.12874447978" x2="204.42339161528" y1="600.30254235599" y2="561.85548618912" class="MapMarker" />
+<line id="siteLink_1_9" marker-end="url(#Triangle)" x1="643.02970387726" x2="1045.2954389865" y1="604.84637567573" y2="608.50980606115" class="MapMarker" />
+<line id="siteLink_17_0" marker-end="url(#Triangle)" x1="927.49731165017" x2="922.17591123839" y1="233.94934354946" y2="230.57682823788" class="MapMarker" />
+<line id="siteLink_1_14" marker-end="url(#Triangle)" x1="588.61251773758" x2="547.11027596198" y1="642.17658476968" y2="1059.8154866724" class="MapMarker" />
+<line id="siteLink_1_6" marker-end="url(#Triangle)" x1="572.85957218575" x2="356.87548441127" y1="571.79438193059" y2="210.97315221653" class="MapMarker" />
+<line id="siteLink_1_4" marker-end="url(#Triangle)" x1="604.68307498655" x2="681.656094157" y1="638.02861359384" y2="848.31158117217" class="MapMarker" />
+<line id="siteLink_1_0" marker-end="url(#Triangle)" x1="621.94503482704" x2="849.15873112653" y1="563.44113967024" y2="248.90636968071" class="MapMarker" />
+<line id="siteLink_1_16" marker-end="url(#Triangle)" x1="559.37935233002" x2="170.77735942595" y1="623.57872896974" y2="849.67836795822" class="MapMarker" />
+
+<script><![CDATA[
+var node_links = new Array();
+node_links[0] = new Array();
+node_links[0]['x1'] = 8;
+node_links[0]['x2'] = 7;
+node_links[0]['status'] = 1;
+node_links[0]['type'] = '.com;.com;';
+node_links[0]['one_way'] = 1;
+node_links[1] = new Array();
+node_links[1]['x1'] = 1;
+node_links[1]['x2'] = 18;
+node_links[1]['status'] = 1;
+node_links[1]['type'] = '.co.uk;.eu;';
+node_links[1]['one_way'] = 1;
+node_links[2] = new Array();
+node_links[2]['x1'] = 1;
+node_links[2]['x2'] = 17;
+node_links[2]['status'] = 1;
+node_links[2]['type'] = '.co.uk;.org;';
+node_links[2]['one_way'] = 1;
+node_links[3] = new Array();
+node_links[3]['x1'] = 1;
+node_links[3]['x2'] = 15;
+node_links[3]['status'] = 1;
+node_links[3]['type'] = '.co.uk;.com;';
+node_links[3]['one_way'] = 1;
+node_links[4] = new Array();
+node_links[4]['x1'] = 1;
+node_links[4]['x2'] = 13;
+node_links[4]['status'] = 1;
+node_links[4]['type'] = '.co.uk;.com;';
+node_links[4]['one_way'] = 1;
+node_links[5] = new Array();
+node_links[5]['x1'] = 1;
+node_links[5]['x2'] = 12;
+node_links[5]['status'] = 1;
+node_links[5]['type'] = '.co.uk;.co.uk;';
+node_links[5]['one_way'] = 1;
+node_links[6] = new Array();
+node_links[6]['x1'] = 1;
+node_links[6]['x2'] = 11;
+node_links[6]['status'] = 1;
+node_links[6]['type'] = '.co.uk;.com;';
+node_links[6]['one_way'] = 1;
+node_links[7] = new Array();
+node_links[7]['x1'] = 1;
+node_links[7]['x2'] = 10;
+node_links[7]['status'] = 1;
+node_links[7]['type'] = '.co.uk;.org.uk;';
+node_links[7]['one_way'] = 1;
+node_links[8] = new Array();
+node_links[8]['x1'] = 1;
+node_links[8]['x2'] = 5;
+node_links[8]['status'] = 1;
+node_links[8]['type'] = '.co.uk;.com;';
+node_links[8]['one_way'] = 1;
+node_links[9] = new Array();
+node_links[9]['x1'] = 1;
+node_links[9]['x2'] = 3;
+node_links[9]['status'] = 1;
+node_links[9]['type'] = '.co.uk;.org;';
+node_links[9]['one_way'] = 1;
+node_links[10] = new Array();
+node_links[10]['x1'] = 1;
+node_links[10]['x2'] = 2;
+node_links[10]['status'] = 1;
+node_links[10]['type'] = '.co.uk;.org.uk;';
+node_links[10]['one_way'] = 1;
+node_links[11] = new Array();
+node_links[11]['x1'] = 2;
+node_links[11]['x2'] = 9;
+node_links[11]['status'] = 1;
+node_links[11]['type'] = '.org.uk;.org;';
+node_links[11]['one_way'] = 1;
+node_links[12] = new Array();
+node_links[12]['x1'] = 1;
+node_links[12]['x2'] = 7;
+node_links[12]['status'] = 1;
+node_links[12]['type'] = '.co.uk;.com;';
+node_links[12]['one_way'] = 1;
+node_links[13] = new Array();
+node_links[13]['x1'] = 1;
+node_links[13]['x2'] = 8;
+node_links[13]['status'] = 1;
+node_links[13]['type'] = '.co.uk;.com;';
+node_links[13]['one_way'] = 1;
+node_links[14] = new Array();
+node_links[14]['x1'] = 1;
+node_links[14]['x2'] = 9;
+node_links[14]['status'] = 1;
+node_links[14]['type'] = '.co.uk;.org;';
+node_links[14]['one_way'] = 1;
+node_links[15] = new Array();
+node_links[15]['x1'] = 17;
+node_links[15]['x2'] = 0;
+node_links[15]['status'] = 1;
+node_links[15]['type'] = '.org;.info;';
+node_links[15]['one_way'] = 1;
+node_links[16] = new Array();
+node_links[16]['x1'] = 1;
+node_links[16]['x2'] = 14;
+node_links[16]['status'] = 1;
+node_links[16]['type'] = '.co.uk;.com;';
+node_links[16]['one_way'] = 1;
+node_links[17] = new Array();
+node_links[17]['x1'] = 1;
+node_links[17]['x2'] = 6;
+node_links[17]['status'] = 1;
+node_links[17]['type'] = '.co.uk;.co.uk;';
+node_links[17]['one_way'] = 1;
+node_links[18] = new Array();
+node_links[18]['x1'] = 1;
+node_links[18]['x2'] = 4;
+node_links[18]['status'] = 1;
+node_links[18]['type'] = '.co.uk;.com;';
+node_links[18]['one_way'] = 1;
+node_links[19] = new Array();
+node_links[19]['x1'] = 1;
+node_links[19]['x2'] = 0;
+node_links[19]['status'] = 1;
+node_links[19]['type'] = '.co.uk;.info;';
+node_links[19]['one_way'] = 1;
+node_links[20] = new Array();
+node_links[20]['x1'] = 1;
+node_links[20]['x2'] = 16;
+node_links[20]['status'] = 1;
+node_links[20]['type'] = '.co.uk;.co.uk;';
+node_links[20]['one_way'] = 1;
+
+]]></script>
+<g >	
+	<circle id="siteCircle0" style="stroke: grey; fill:rgb(0,128,39); stroke-width: 1" onclick="statsOnOff(0);"  onmouseout="alter('mouseout',evt,'http://www.aboutads.info/')" cx="881.172" r="25" cy="204.59" onmouseover="alter('mouseover',evt, 'http://www.aboutads.info/')"  />
+
+	</g><g >	
+	<circle id="siteCircle1" style="stroke: grey; fill:rgb(248,150,43); stroke-width: 1" onclick="statsOnOff(1);"  onmouseout="alter('mouseout',evt,'')" cx="592.368" r="4" cy="604.385" onmouseover="alter('mouseover',evt, '')"  />
+
+	</g><g >	
+	<circle id="siteCircle2" style="stroke: grey; fill:rgb(201,153,151); stroke-width: 1" onclick="statsOnOff(2);"  onmouseout="alter('mouseout',evt,'http://www.britishathletics.org.uk/')" cx="1074.593" r="17.6777" cy="677.216" onmouseover="alter('mouseover',evt, 'http://www.britishathletics.org.uk/')"  />
+
+	</g><g >	
+	<circle id="siteCircle3" style="stroke: grey; fill:rgb(151,201,50); stroke-width: 1" onclick="statsOnOff(3);"  onmouseout="alter('mouseout',evt,'http://en.wikipedia.org/wiki/HTTP_cookie')" cx="323.768" r="17.6777" cy="1026.355" onmouseover="alter('mouseover',evt, 'http://en.wikipedia.org/wiki/HTTP_cookie')"  />
+
+	</g><g >	
+	<circle id="siteCircle4" style="stroke: grey; fill:rgb(16,140,191); stroke-width: 1" onclick="statsOnOff(4);"  onmouseout="alter('mouseout',evt,'http://www.europeantour.com/index.html')" cx="695.324" r="17.6777" cy="885.651" onmouseover="alter('mouseover',evt, 'http://www.europeantour.com/index.html')"  />
+
+	</g><g >	
+	<circle id="siteCircle5" style="stroke: grey; fill:rgb(16,140,191); stroke-width: 1" onclick="statsOnOff(5);"  onmouseout="alter('mouseout',evt,'http://www.facebook.com/BBCEarth')" cx="991.225" r="17.6777" cy="913.408" onmouseover="alter('mouseover',evt, 'http://www.facebook.com/BBCEarth')"  />
+
+	</g><g >	
+	<circle id="siteCircle6" style="stroke: grey; fill:rgb(248,150,43); stroke-width: 1" onclick="statsOnOff(6);"  onmouseout="alter('mouseout',evt,'http://feeds.bbci.co.uk/news/world/rss.xml')" cx="336.134" r="17.6777" cy="176.3226" onmouseover="alter('mouseover',evt, 'http://feeds.bbci.co.uk/news/world/rss.xml')"  />
+
+	</g><g >	
+	<circle id="siteCircle7" style="stroke: grey; fill:rgb(16,140,191); stroke-width: 1" onclick="statsOnOff(7);"  onmouseout="alter('mouseout',evt,'http://www.fia.com/')" cx="100" r="25" cy="593.998" onmouseover="alter('mouseover',evt, 'http://www.fia.com/')"  />
+
+	</g><g >	
+	<circle id="siteCircle8" style="stroke: grey; fill:rgb(16,140,191); stroke-width: 1" onclick="statsOnOff(8);"  onmouseout="alter('mouseout',evt,'http://www.formula1.com/')" cx="164.4291" r="17.6777" cy="557.471" onmouseover="alter('mouseover',evt, 'http://www.formula1.com/')"  />
+
+	</g><g >	
+	<circle id="siteCircle9" style="stroke: grey; fill:rgb(151,201,50); stroke-width: 1" onclick="statsOnOff(9);"  onmouseout="alter('mouseout',evt,'http://www.iaaf.org/home')" cx="1100" r="25" cy="609.008" onmouseover="alter('mouseover',evt, 'http://www.iaaf.org/home')"  />
+
+	</g><g >	
+	<circle id="siteCircle10" style="stroke: grey; fill:rgb(201,153,151); stroke-width: 1" onclick="statsOnOff(10);"  onmouseout="alter('mouseout',evt,'http://www.ico.org.uk/')" cx="544.321" r="17.6777" cy="319.546" onmouseover="alter('mouseover',evt, 'http://www.ico.org.uk/')"  />
+
+	</g><g >	
+	<circle id="siteCircle11" style="stroke: grey; fill:rgb(16,140,191); stroke-width: 1" onclick="statsOnOff(11);"  onmouseout="alter('mouseout',evt,'http://instagram.com/bbcafrica')" cx="808.429" r="17.6777" cy="1066.309" onmouseover="alter('mouseover',evt, 'http://instagram.com/bbcafrica')"  />
+
+	</g><g >	
+	<circle id="siteCircle12" style="stroke: grey; fill:rgb(248,150,43); stroke-width: 1" onclick="statsOnOff(12);"  onmouseout="alter('mouseout',evt,'http://iplayerhelp.external.bbc.co.uk/help/playing_radio_progs/')" cx="158.9064" r="17.6777" cy="318.593" onmouseover="alter('mouseover',evt, 'http://iplayerhelp.external.bbc.co.uk/help/playing_radio_progs/')"  />
+
+	</g><g >	
+	<circle id="siteCircle13" style="stroke: grey; fill:rgb(16,140,191); stroke-width: 1" onclick="statsOnOff(13);"  onmouseout="alter('mouseout',evt,'http://ladieseuropeantour.com/leaderboard/')" cx="877.352" r="17.6777" cy="466.591" onmouseover="alter('mouseover',evt, 'http://ladieseuropeantour.com/leaderboard/')"  />
+
+	</g><g >	
+	<circle id="siteCircle14" style="stroke: grey; fill:rgb(16,140,191); stroke-width: 1" onclick="statsOnOff(14);"  onmouseout="alter('mouseout',evt,'http://www.linkedin.com/company/bbc')" cx="543.117" r="17.6777" cy="1100" onmouseover="alter('mouseover',evt, 'http://www.linkedin.com/company/bbc')"  />
+
+	</g><g >	
+	<circle id="siteCircle15" style="stroke: grey; fill:rgb(16,140,191); stroke-width: 1" onclick="statsOnOff(15);"  onmouseout="alter('mouseout',evt,'http://www.lpga.com/tournaments/international-crown/leaderboard')" cx="390.924" r="17.6777" cy="755.69" onmouseover="alter('mouseover',evt, 'http://www.lpga.com/tournaments/international-crown/leaderboard')"  />
+
+	</g><g >	
+	<circle id="siteCircle16" style="stroke: grey; fill:rgb(248,150,43); stroke-width: 1" onclick="statsOnOff(16);"  onmouseout="alter('mouseout',evt,'http://m.bbc.co.uk/')" cx="135.8261" r="17.6777" cy="870.014" onmouseover="alter('mouseover',evt, 'http://m.bbc.co.uk/')"  />
+
+	</g><g >	
+	<circle id="siteCircle17" style="stroke: grey; fill:rgb(151,201,50); stroke-width: 1" onclick="statsOnOff(17);"  onmouseout="alter('mouseout',evt,'http://www.networkadvertising.org/choices/')" cx="947.176" r="17.6777" cy="246.421" onmouseover="alter('mouseover',evt, 'http://www.networkadvertising.org/choices/')"  />
+
+	</g><g >	
+	<circle id="siteCircle18" style="stroke: grey; fill:rgb(246,34,33); stroke-width: 1" onclick="statsOnOff(18);"  onmouseout="alter('mouseout',evt,'http://youronlinechoices.eu/')" cx="579.19" r="17.6777" cy="100" onmouseover="alter('mouseover',evt, 'http://youronlinechoices.eu/')"  />
+
+	</g><a xlink:href="http://www.aboutads.info/" target="_blank" >
+<text id="siteName0" text-anchor="start" x="906.172" y="234.59" class="siteName">aboutads.info</text>
+</a><a xlink:href="" target="_blank" >
+<text id="siteName1" text-anchor="start" x="596.368" y="613.385" class="siteName">bbc.co.uk</text>
+</a><a xlink:href="http://www.britishathletics.org.uk/" target="_blank" >
+<text id="siteName2" text-anchor="start" x="1092.2707" y="699.8937" class="siteName">britishathletics.org.uk</text>
+</a><a xlink:href="http://en.wikipedia.org/wiki/HTTP_cookie" target="_blank" >
+<text id="siteName3" text-anchor="start" x="341.4457" y="1049.0327" class="siteName">en.wikipedia.org</text>
+</a><a xlink:href="http://www.europeantour.com/index.html" target="_blank" >
+<text id="siteName4" text-anchor="start" x="713.0017" y="908.3287" class="siteName">europeantour.com</text>
+</a><a xlink:href="http://www.facebook.com/BBCEarth" target="_blank" >
+<text id="siteName5" text-anchor="start" x="1008.9027" y="936.0857" class="siteName">facebook.com</text>
+</a><a xlink:href="http://feeds.bbci.co.uk/news/world/rss.xml" target="_blank" >
+<text id="siteName6" text-anchor="start" x="353.8117" y="199.0003" class="siteName">feeds.bbci.co.uk</text>
+</a><a xlink:href="http://www.fia.com/" target="_blank" >
+<text id="siteName7" text-anchor="start" x="125" y="623.998" class="siteName">fia.com</text>
+</a><a xlink:href="http://www.formula1.com/" target="_blank" >
+<text id="siteName8" text-anchor="start" x="182.1068" y="580.1487" class="siteName">formula1.com</text>
+</a><a xlink:href="http://www.iaaf.org/home" target="_blank" >
+<text id="siteName9" text-anchor="start" x="1125" y="639.008" class="siteName">iaaf.org</text>
+</a><a xlink:href="http://www.ico.org.uk/" target="_blank" >
+<text id="siteName10" text-anchor="start" x="561.9987" y="342.2237" class="siteName">ico.org.uk</text>
+</a><a xlink:href="http://instagram.com/bbcafrica" target="_blank" >
+<text id="siteName11" text-anchor="start" x="826.1067" y="1088.9867" class="siteName">instagram.com</text>
+</a><a xlink:href="http://iplayerhelp.external.bbc.co.uk/help/playing_radio_progs/" target="_blank" >
+<text id="siteName12" text-anchor="start" x="176.5841" y="341.2707" class="siteName">iplayerhelp.external.bbc.co.uk</text>
+</a><a xlink:href="http://ladieseuropeantour.com/leaderboard/" target="_blank" >
+<text id="siteName13" text-anchor="start" x="895.0297" y="489.2687" class="siteName">ladieseuropeantour.com</text>
+</a><a xlink:href="http://www.linkedin.com/company/bbc" target="_blank" >
+<text id="siteName14" text-anchor="start" x="560.7947" y="1122.6777" class="siteName">linkedin.com</text>
+</a><a xlink:href="http://www.lpga.com/tournaments/international-crown/leaderboard" target="_blank" >
+<text id="siteName15" text-anchor="start" x="408.6017" y="778.3677" class="siteName">lpga.com</text>
+</a><a xlink:href="http://m.bbc.co.uk/" target="_blank" >
+<text id="siteName16" text-anchor="start" x="153.5038" y="892.6917" class="siteName">m.bbc.co.uk</text>
+</a><a xlink:href="http://www.networkadvertising.org/choices/" target="_blank" >
+<text id="siteName17" text-anchor="start" x="964.8537" y="269.0987" class="siteName">networkadvertising.org</text>
+</a><a xlink:href="http://youronlinechoices.eu/" target="_blank" >
+<text id="siteName18" text-anchor="start" x="596.8677" y="122.6777" class="siteName">youronlinechoices.eu</text>
+</a><rect x="1298" y="0" width="450" height="240" fill="#f0f0f0"/><text x="1320" y="30" width="420" fill="rgb(15,15,15)" class="MapTitle" style="font-family: Verdana; font-size: 16px; font-weight: bold; text-align: justify; line-interval: 1.0em">Tay Bot (Page Crawl)</text>
+<text text-anchor='start' x='1320' y='70' fill='rgb(15,15,15)' class='MapBoxLabel'>Co-link Map Details:</text>
+<text text-anchor="start" x="1320" y="90" fill="rgb(15,15,15)" class="NodeDefault">Author:</text>
+<text text-anchor="start" x="1475" y="90" fill="rgb(15,15,15)" class="NodeDefault">miles coleman</text>
+<text text-anchor="start" x="1320" y="105" fill="rgb(15,15,15)" class="NodeDefault">Email:</text>
+<text text-anchor="start" x="1475" y="105" fill="rgb(15,15,15)" class="NodeDefault">mc684@uw.edu</text>
+<text text-anchor="start" x="1320" y="120" fill="rgb(15,15,15)" class="NodeDefault">Crawl start:</text>
+<text text-anchor="start" x="1475" y="120" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 00:19</text>
+<text text-anchor="start" x="1320" y="135" fill="rgb(15,15,15)" class="NodeDefault">Crawl end:</text>
+<text text-anchor="start" x="1475" y="135" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 02:32</text>
+<text text-anchor="start" x="1320" y="150" fill="rgb(15,15,15)" class="NodeDefault">Privilege starting points:</text>
+<text text-anchor="start" x="1475" y="150" fill="rgb(15,15,15)" class="NodeDefault">on</text>
+<text text-anchor="start" x="1320" y="165" fill="rgb(15,15,15)" class="NodeDefault">Co-link Analysis Mode:</text>
+<text text-anchor="start" x="1475" y="165" fill="rgb(15,15,15)" class="NodeDefault">site</text>
+<text text-anchor="start" x="1320" y="180" fill="rgb(15,15,15)" class="NodeDefault">Iterations:</text>
+<text text-anchor="start" x="1475" y="180" fill="rgb(15,15,15)" class="NodeDefault">3</text>
+<text text-anchor="start" x="1320" y="195" fill="rgb(15,15,15)" class="NodeDefault">Crawl Depth:</text>
+<text text-anchor="start" x="1475" y="195" fill="rgb(15,15,15)" class="NodeDefault">3</text>
+<text text-anchor="start" x="1320" y="210" fill="rgb(15,15,15)" class="NodeDefault">Node count:</text>
+<text text-anchor="start" x="1475" y="210" fill="rgb(15,15,15)" class="NodeDefault">19</text>
+<text text-anchor="start" x="1320" y="230" fill="rgb(15,15,15)" class="MapBoxNote">Map generated from Issuecrawler.net by the Govcom.org Foundation, Amsterdam.</text>
+<g id="map_legend" transform="translate(0,0)"><rect x="1298" y="245" width="450" height="95" fill="#f0f0f0"/><text text-anchor="start" x="1330" y="265" fill="rgb(15,15,15)" class="MapBoxLabel">Legend:</text>
+<circle cx="1335" cy="290" r="9" style="stroke: #ffffff; fill: #008027; stroke-width: 3" onclick="legendClick('info');" />
+<text text-anchor="start" x="1311" y="320" fill="rgb(15,15,15)" class="NodeDefault">(.info)</text>
+<circle cx="1390" cy="290" r="9" style="stroke: #ffffff; fill: #f8962b; stroke-width: 3" onclick="legendClick('co.uk');" />
+<text text-anchor="start" x="1360" y="320" fill="rgb(15,15,15)" class="NodeDefault">(.co.uk)</text>
+<circle cx="1445" cy="290" r="9" style="stroke: #ffffff; fill: #c99997; stroke-width: 3" onclick="legendClick('org.uk');" />
+<text text-anchor="start" x="1409" y="320" fill="rgb(15,15,15)" class="NodeDefault">(.org.uk)</text>
+<circle cx="1500" cy="290" r="9" style="stroke: #ffffff; fill: #97c932; stroke-width: 3" onclick="legendClick('org');" />
+<text text-anchor="start" x="1482" y="320" fill="rgb(15,15,15)" class="NodeDefault">(.org)</text>
+<circle cx="1555" cy="290" r="9" style="stroke: #ffffff; fill: #108cbf; stroke-width: 3" onclick="legendClick('com');" />
+<text text-anchor="start" x="1537" y="320" fill="rgb(15,15,15)" class="NodeDefault">(.com)</text>
+<circle cx="1610" cy="290" r="9" style="stroke: #ffffff; fill: #f62221; stroke-width: 3" onclick="legendClick('eu');" />
+<text text-anchor="start" x="1598" y="320" fill="rgb(15,15,15)" class="NodeDefault">(.eu)</text>
+</g><script><![CDATA[var node_types = new Array();
+node_types['info'] = 1;
+node_types['co.uk'] = 1;
+node_types['org.uk'] = 1;
+node_types['org'] = 1;
+node_types['com'] = 1;
+node_types['eu'] = 1;
+
+
+]]></script><g id="links_menu"><rect x="1298" y="345" width="450" height="60" fill="#f0f0f0"/><text text-anchor="start" x="1320" y="365" fill="rgb(15,15,15)" class="MapBoxLabel">Select links layers:</text><rect x="1320" y="375" width="120" height="20" fill="#ffffff" stroke="rgb(15,15,15)" stroke-width="1px" /><g onclick="layerOnOff('menu1');">	<rect x="1443" y="375" width="20" height="20" fill="#ffffff" stroke="rgb(15,15,15)" stroke-width="1px" />	<polygon points="1446,381 1459,381 1452,390" fill="#ffffff" stroke="rgb(15,15,15)" stroke-width="1px" /></g><text id='Menu1OptSel1' text-anchor='start' x='1328' y='390' fill='rgb(15,15,15)' class='NodeDefault'>links on</text><text id='Menu1OptSel2' text-anchor='start' x='1328' y='390' fill='rgb(15,15,15)' class='NodeDefault' style='display: none;'>links off</text></g><script><![CDATA[var nodes = new Array();
+nodes[0] = '.info';
+nodes[1] = '.co.uk';
+nodes[2] = '.org.uk';
+nodes[3] = '.org';
+nodes[4] = '.com';
+nodes[5] = '.com';
+nodes[6] = '.co.uk';
+nodes[7] = '.com';
+nodes[8] = '.com';
+nodes[9] = '.org';
+nodes[10] = '.org.uk';
+nodes[11] = '.com';
+nodes[12] = '.co.uk';
+nodes[13] = '.com';
+nodes[14] = '.com';
+nodes[15] = '.com';
+nodes[16] = '.co.uk';
+nodes[17] = '.org';
+nodes[18] = '.eu';
+
+
+]]></script><rect id="statistics_panel" x="1298" y="410" width="450" height="550" fill="#f0f0f0"/><text id="statistics_headline" text-anchor="start" x="1320" y="435" fill="rgb(15,15,15)" class="MapBoxLabel">Statistics:</text>
+<g id='site0' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(0,128,39); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">aboutads.info</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.aboutads.info/</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">none</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">123</text>
+<g transform='translate(0,0)' id='site0_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site0_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. networkadvertising.org</text>
+<text text-anchor="start" x="1320" y="601" fill="rgb(15,15,15)" class="NodeDefault">2. bbc.co.uk</text>
+<line x1="1298" y1="610" x2="1748" y2="610" fill="rgb(230,230,230)" />
+<line x1="1298" y1="610" x2="1748" y2="610" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site0_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="626" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site0_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 2</text></a>
+</g>
+</g>
+<g id='site1' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(248,150,43); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">bbc.co.uk</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault"></text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">none</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">41628</text>
+<g transform='translate(0,0)' id='site1_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. youronlinechoices.eu</text>
+<text text-anchor="start" x="1320" y="601" fill="rgb(15,15,15)" class="NodeDefault">2. networkadvertising.org</text>
+<text text-anchor="start" x="1320" y="616" fill="rgb(15,15,15)" class="NodeDefault">3. lpga.com</text>
+<text text-anchor="start" x="1320" y="631" fill="rgb(15,15,15)" class="NodeDefault">4. ladieseuropeantour.com</text>
+<text text-anchor="start" x="1320" y="646" fill="rgb(15,15,15)" class="NodeDefault">5. iplayerhelp.external.bbc.co.uk</text>
+<text text-anchor="start" x="1320" y="661" fill="rgb(15,15,15)" class="NodeDefault">6. instagram.com</text>
+<text text-anchor="start" x="1320" y="676" fill="rgb(15,15,15)" class="NodeDefault">7. ico.org.uk</text>
+<text text-anchor="start" x="1320" y="691" fill="rgb(15,15,15)" class="NodeDefault">8. facebook.com</text>
+<text text-anchor="start" x="1320" y="706" fill="rgb(15,15,15)" class="NodeDefault">9. en.wikipedia.org</text>
+<text text-anchor="start" x="1320" y="721" fill="rgb(15,15,15)" class="NodeDefault">10. britishathletics.org.uk</text>
+<text text-anchor="start" x="1520" y="586" fill="rgb(15,15,15)" class="NodeDefault">11. fia.com</text>
+<text text-anchor="start" x="1520" y="601" fill="rgb(15,15,15)" class="NodeDefault">12. formula1.com</text>
+<text text-anchor="start" x="1520" y="616" fill="rgb(15,15,15)" class="NodeDefault">13. iaaf.org</text>
+<text text-anchor="start" x="1520" y="631" fill="rgb(15,15,15)" class="NodeDefault">14. linkedin.com</text>
+<text text-anchor="start" x="1520" y="646" fill="rgb(15,15,15)" class="NodeDefault">15. feeds.bbci.co.uk</text>
+<text text-anchor="start" x="1520" y="661" fill="rgb(15,15,15)" class="NodeDefault">16. europeantour.com</text>
+<text text-anchor="start" x="1520" y="676" fill="rgb(15,15,15)" class="NodeDefault">17. aboutads.info</text>
+<text text-anchor="start" x="1520" y="691" fill="rgb(15,15,15)" class="NodeDefault">18. m.bbc.co.uk</text>
+<line x1="1298" y1="731" x2="1748" y2="731" fill="rgb(230,230,230)" />
+<line x1="1298" y1="731" x2="1748" y2="731" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site1_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">no links from the network.</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site1_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 18</text></a>
+</g>
+<g transform='translate(0,0)' id='site1_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="746" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 0</text></a>
+</g>
+</g>
+<g id='site2' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(201,153,151); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">britishathletics.org.uk</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.britishathletics.org.uk/</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 01:57</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">28</text>
+<g transform='translate(0,0)' id='site2_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. iaaf.org</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site2_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site2_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 1</text></a>
+</g>
+<g transform='translate(0,0)' id='site2_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site3' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(151,201,50); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">en.wikipedia.org</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://en.wikipedia.org/wiki/HTTP_coo</text>
+<text text-anchor="start" x="1483" y="503" fill="rgb(15,15,15)" class="NodeDefault">ie</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="518" fill="rgb(15,15,15)" class="NodeDefault">none</text>
+<text text-anchor="start" x="1320" y="535" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="535" fill="rgb(15,15,15)" class="NodeDefault">177</text>
+<g transform='translate(0,0)' id='site3_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site3_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site3_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site3_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site4' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(16,140,191); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">europeantour.com</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.europeantour.com/index.htm</text>
+<text text-anchor="start" x="1483" y="503" fill="rgb(15,15,15)" class="NodeDefault"></text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="518" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 01:57</text>
+<text text-anchor="start" x="1320" y="535" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="535" fill="rgb(15,15,15)" class="NodeDefault">19</text>
+<g transform='translate(0,0)' id='site4_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site4_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site4_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site4_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site5' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(16,140,191); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">facebook.com</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.facebook.com/BBCEarth</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">none</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">5831</text>
+<g transform='translate(0,0)' id='site5_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site5_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site5_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site5_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site6' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(248,150,43); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">feeds.bbci.co.uk</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://feeds.bbci.co.uk/news/world/rs</text>
+<text text-anchor="start" x="1483" y="503" fill="rgb(15,15,15)" class="NodeDefault">.xml</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="518" fill="rgb(15,15,15)" class="NodeDefault">none</text>
+<text text-anchor="start" x="1320" y="535" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="535" fill="rgb(15,15,15)" class="NodeDefault">110</text>
+<g transform='translate(0,0)' id='site6_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site6_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site6_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site6_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site7' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(16,140,191); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">fia.com</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.fia.com/</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">none</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">40</text>
+<g transform='translate(0,0)' id='site7_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site7_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. formula1.com</text>
+<text text-anchor="start" x="1320" y="601" fill="rgb(15,15,15)" class="NodeDefault">2. bbc.co.uk</text>
+<line x1="1298" y1="610" x2="1748" y2="610" fill="rgb(230,230,230)" />
+<line x1="1298" y1="610" x2="1748" y2="610" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site7_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="626" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site7_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 2</text></a>
+</g>
+</g>
+<g id='site8' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(16,140,191); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">formula1.com</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.formula1.com/</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">22 Jul 2016 - 17:58</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">6</text>
+<g transform='translate(0,0)' id='site8_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. fia.com</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site8_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site8_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 1</text></a>
+</g>
+<g transform='translate(0,0)' id='site8_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site9' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(151,201,50); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">iaaf.org</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.iaaf.org/home</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 01:50</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">424</text>
+<g transform='translate(0,0)' id='site9_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site9_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. britishathletics.org.uk</text>
+<text text-anchor="start" x="1320" y="601" fill="rgb(15,15,15)" class="NodeDefault">2. bbc.co.uk</text>
+<line x1="1298" y1="610" x2="1748" y2="610" fill="rgb(230,230,230)" />
+<line x1="1298" y1="610" x2="1748" y2="610" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site9_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="626" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site9_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 2</text></a>
+</g>
+</g>
+<g id='site10' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(201,153,151); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">ico.org.uk</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.ico.org.uk/</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">none</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">25</text>
+<g transform='translate(0,0)' id='site10_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site10_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site10_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site10_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site11' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(16,140,191); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">instagram.com</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://instagram.com/bbcafrica</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">none</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">1170</text>
+<g transform='translate(0,0)' id='site11_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site11_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site11_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site11_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site12' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(248,150,43); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">iplayerhelp.external.bbc.co.uk</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://iplayerhelp.external.bbc.co.uk</text>
+<text text-anchor="start" x="1483" y="503" fill="rgb(15,15,15)" class="NodeDefault">help/playing_radio_progs/</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="518" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 01:57</text>
+<text text-anchor="start" x="1320" y="535" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="535" fill="rgb(15,15,15)" class="NodeDefault">85</text>
+<g transform='translate(0,0)' id='site12_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site12_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site12_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site12_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site13' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(16,140,191); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">ladieseuropeantour.com</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://ladieseuropeantour.com/leaderb</text>
+<text text-anchor="start" x="1483" y="503" fill="rgb(15,15,15)" class="NodeDefault">ard/</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="518" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 01:57</text>
+<text text-anchor="start" x="1320" y="535" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="535" fill="rgb(15,15,15)" class="NodeDefault">15</text>
+<g transform='translate(0,0)' id='site13_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site13_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site13_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site13_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site14' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(16,140,191); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">linkedin.com</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.linkedin.com/company/bbc</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">none</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">1034</text>
+<g transform='translate(0,0)' id='site14_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site14_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site14_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site14_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site15' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(16,140,191); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">lpga.com</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.lpga.com/tournaments/inter</text>
+<text text-anchor="start" x="1483" y="503" fill="rgb(15,15,15)" class="NodeDefault">ational-crown/leaderboard</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="518" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 01:57</text>
+<text text-anchor="start" x="1320" y="535" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="535" fill="rgb(15,15,15)" class="NodeDefault">9</text>
+<g transform='translate(0,0)' id='site15_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site15_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site15_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site15_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site16' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(248,150,43); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">m.bbc.co.uk</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://m.bbc.co.uk/</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 01:57</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">121</text>
+<g transform='translate(0,0)' id='site16_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site16_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site16_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site16_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site17' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(151,201,50); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">networkadvertising.org</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://www.networkadvertising.org/cho</text>
+<text text-anchor="start" x="1483" y="503" fill="rgb(15,15,15)" class="NodeDefault">ces/</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="518" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 01:23</text>
+<text text-anchor="start" x="1320" y="535" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="535" fill="rgb(15,15,15)" class="NodeDefault">66</text>
+<g transform='translate(0,0)' id='site17_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. aboutads.info</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site17_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site17_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 1</text></a>
+</g>
+<g transform='translate(0,0)' id='site17_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<g id='site18' style='display: none;'>
+<circle cx='1347' r='15' cy='459' style='fill: white; stroke:rgb(246,34,33); stroke-width: 3' />
+<text text-anchor="start" x="1370" y="464" fill="rgb(15,15,15)" class="NodeLabel">youronlinechoices.eu</text>
+<text text-anchor="start" x="1320" y="490" fill="rgb(15,15,15)" class="NodeDefault">Destination URL:</text>
+<text text-anchor="start" x="1483" y="490" fill="rgb(15,15,15)" class="NodeDefault">http://youronlinechoices.eu/</text>
+<text text-anchor="start" x="1320" y="507" fill="rgb(15,15,15)" class="NodeDefault">Page date stamp:</text>
+<text text-anchor="start" x="1483" y="507" fill="rgb(15,15,15)" class="NodeDefault">23 Jul 2016 - 01:23</text>
+<text text-anchor="start" x="1320" y="524" fill="rgb(15,15,15)" class="NodeDefault">Links received from crawled population:</text>
+<text text-anchor="start" x="1633" y="524" fill="rgb(15,15,15)" class="NodeDefault">72</text>
+<g transform='translate(0,0)' id='site18_Links1' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links to network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">No links to the network.</text>
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(230,230,230)" />
+<line x1="1298" y1="596" x2="1748" y2="596" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site18_Links2' style='display: none;'>
+<text text-anchor="start" x="1320" y="563" fill="rgb(15,15,15)" class="NodeDefaultBold">Links from network (1 - 20)</text>
+<line x1="1298" y1="571" x2="1748" y2="571" fill="rgb(230,230,230)" />
+<line x1="1298" y1="572" x2="1748" y2="572" fill="rgb(190,190,190)" />
+<text text-anchor="start" x="1320" y="586" fill="rgb(15,15,15)" class="NodeDefault">1. bbc.co.uk</text>
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(230,230,230)" />
+<line x1="1298" y1="595" x2="1748" y2="595" fill="rgb(190,190,190)" />
+</g>
+<g transform='translate(0,0)' id='site18_Links_URL1' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(1);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links to network: 0</text></a>
+</g>
+<g transform='translate(0,0)' id='site18_Links_URL2' style='display: none;'>
+<a xlink:href="#"><text onclick="linksStatsOnOff(2);" text-anchor="start" x="1320" y="611" fill="rgb(15,15,15)" class="NodeDefaultItalic">Links from network: 1</text></a>
+</g>
+</g>
+<script><![CDATA[var node_link_stats = new Array();
+node_link_stats['0'] = new Array();
+node_link_stats['0']['to_net'] = 63;
+node_link_stats['0']['from_net'] = 78;
+node_link_stats['1'] = new Array();
+node_link_stats['1']['to_net'] = 198;
+node_link_stats['1']['from_net'] = 63;
+node_link_stats['2'] = new Array();
+node_link_stats['2']['to_net'] = 63;
+node_link_stats['2']['from_net'] = 63;
+node_link_stats['3'] = new Array();
+node_link_stats['3']['to_net'] = 63;
+node_link_stats['3']['from_net'] = 63;
+node_link_stats['4'] = new Array();
+node_link_stats['4']['to_net'] = 63;
+node_link_stats['4']['from_net'] = 63;
+node_link_stats['5'] = new Array();
+node_link_stats['5']['to_net'] = 63;
+node_link_stats['5']['from_net'] = 63;
+node_link_stats['6'] = new Array();
+node_link_stats['6']['to_net'] = 63;
+node_link_stats['6']['from_net'] = 63;
+node_link_stats['7'] = new Array();
+node_link_stats['7']['to_net'] = 63;
+node_link_stats['7']['from_net'] = 78;
+node_link_stats['8'] = new Array();
+node_link_stats['8']['to_net'] = 63;
+node_link_stats['8']['from_net'] = 63;
+node_link_stats['9'] = new Array();
+node_link_stats['9']['to_net'] = 63;
+node_link_stats['9']['from_net'] = 78;
+node_link_stats['10'] = new Array();
+node_link_stats['10']['to_net'] = 63;
+node_link_stats['10']['from_net'] = 63;
+node_link_stats['11'] = new Array();
+node_link_stats['11']['to_net'] = 63;
+node_link_stats['11']['from_net'] = 63;
+node_link_stats['12'] = new Array();
+node_link_stats['12']['to_net'] = 63;
+node_link_stats['12']['from_net'] = 63;
+node_link_stats['13'] = new Array();
+node_link_stats['13']['to_net'] = 63;
+node_link_stats['13']['from_net'] = 63;
+node_link_stats['14'] = new Array();
+node_link_stats['14']['to_net'] = 63;
+node_link_stats['14']['from_net'] = 63;
+node_link_stats['15'] = new Array();
+node_link_stats['15']['to_net'] = 63;
+node_link_stats['15']['from_net'] = 63;
+node_link_stats['16'] = new Array();
+node_link_stats['16']['to_net'] = 63;
+node_link_stats['16']['from_net'] = 63;
+node_link_stats['17'] = new Array();
+node_link_stats['17']['to_net'] = 63;
+node_link_stats['17']['from_net'] = 63;
+node_link_stats['18'] = new Array();
+node_link_stats['18']['to_net'] = 63;
+node_link_stats['18']['from_net'] = 63;
+
+
+var link_nodes = new Array();
+link_nodes[0] = new Array();
+link_nodes[0][1] = new Array();
+link_nodes[0][2] = new Array();
+link_nodes[0][2][1] = '1. networkadvertising.org';
+link_nodes[0][2][2] = '2. bbc.co.uk';
+link_nodes[1] = new Array();
+link_nodes[1][1] = new Array();
+link_nodes[1][2] = new Array();
+link_nodes[1][1][1] = '1. youronlinechoices.eu';
+link_nodes[1][1][2] = '2. networkadvertising.org';
+link_nodes[1][1][3] = '3. lpga.com';
+link_nodes[1][1][4] = '4. ladieseuropeantour.com';
+link_nodes[1][1][5] = '5. iplayerhelp.external.bbc.co.uk';
+link_nodes[1][1][6] = '6. instagram.com';
+link_nodes[1][1][7] = '7. ico.org.uk';
+link_nodes[1][1][8] = '8. facebook.com';
+link_nodes[1][1][9] = '9. en.wikipedia.org';
+link_nodes[1][1][10] = '10. britishathletics.org.uk';
+link_nodes[1][1][11] = '11. fia.com';
+link_nodes[1][1][12] = '12. formula1.com';
+link_nodes[1][1][13] = '13. iaaf.org';
+link_nodes[1][1][14] = '14. linkedin.com';
+link_nodes[1][1][15] = '15. feeds.bbci.co.uk';
+link_nodes[1][1][16] = '16. europeantour.com';
+link_nodes[1][1][17] = '17. aboutads.info';
+link_nodes[1][1][18] = '18. m.bbc.co.uk';
+link_nodes[2] = new Array();
+link_nodes[2][1] = new Array();
+link_nodes[2][2] = new Array();
+link_nodes[2][2][1] = '1. bbc.co.uk';
+link_nodes[2][1][1] = '1. iaaf.org';
+link_nodes[3] = new Array();
+link_nodes[3][1] = new Array();
+link_nodes[3][2] = new Array();
+link_nodes[3][2][1] = '1. bbc.co.uk';
+link_nodes[4] = new Array();
+link_nodes[4][1] = new Array();
+link_nodes[4][2] = new Array();
+link_nodes[4][2][1] = '1. bbc.co.uk';
+link_nodes[5] = new Array();
+link_nodes[5][1] = new Array();
+link_nodes[5][2] = new Array();
+link_nodes[5][2][1] = '1. bbc.co.uk';
+link_nodes[6] = new Array();
+link_nodes[6][1] = new Array();
+link_nodes[6][2] = new Array();
+link_nodes[6][2][1] = '1. bbc.co.uk';
+link_nodes[7] = new Array();
+link_nodes[7][1] = new Array();
+link_nodes[7][2] = new Array();
+link_nodes[7][2][1] = '1. formula1.com';
+link_nodes[7][2][2] = '2. bbc.co.uk';
+link_nodes[8] = new Array();
+link_nodes[8][1] = new Array();
+link_nodes[8][2] = new Array();
+link_nodes[8][1][1] = '1. fia.com';
+link_nodes[8][2][1] = '1. bbc.co.uk';
+link_nodes[9] = new Array();
+link_nodes[9][1] = new Array();
+link_nodes[9][2] = new Array();
+link_nodes[9][2][1] = '1. britishathletics.org.uk';
+link_nodes[9][2][2] = '2. bbc.co.uk';
+link_nodes[10] = new Array();
+link_nodes[10][1] = new Array();
+link_nodes[10][2] = new Array();
+link_nodes[10][2][1] = '1. bbc.co.uk';
+link_nodes[11] = new Array();
+link_nodes[11][1] = new Array();
+link_nodes[11][2] = new Array();
+link_nodes[11][2][1] = '1. bbc.co.uk';
+link_nodes[12] = new Array();
+link_nodes[12][1] = new Array();
+link_nodes[12][2] = new Array();
+link_nodes[12][2][1] = '1. bbc.co.uk';
+link_nodes[13] = new Array();
+link_nodes[13][1] = new Array();
+link_nodes[13][2] = new Array();
+link_nodes[13][2][1] = '1. bbc.co.uk';
+link_nodes[14] = new Array();
+link_nodes[14][1] = new Array();
+link_nodes[14][2] = new Array();
+link_nodes[14][2][1] = '1. bbc.co.uk';
+link_nodes[15] = new Array();
+link_nodes[15][1] = new Array();
+link_nodes[15][2] = new Array();
+link_nodes[15][2][1] = '1. bbc.co.uk';
+link_nodes[16] = new Array();
+link_nodes[16][1] = new Array();
+link_nodes[16][2] = new Array();
+link_nodes[16][2][1] = '1. bbc.co.uk';
+link_nodes[17] = new Array();
+link_nodes[17][1] = new Array();
+link_nodes[17][2] = new Array();
+link_nodes[17][2][1] = '1. bbc.co.uk';
+link_nodes[17][1][1] = '1. aboutads.info';
+link_nodes[18] = new Array();
+link_nodes[18][1] = new Array();
+link_nodes[18][2] = new Array();
+link_nodes[18][2][1] = '1. bbc.co.uk';
+
+
+]]></script><g id="menu1" style="display: none;">       <rect x="1320" y="395" width="120" height="40" fill="#ffffff" stroke="rgb(15,15,15)" stroke-width="1px" /><g onmouseover="hooverOption(1,1);" onclick="setOption(1,1);"><rect id="Menu1Opt1" x="1321" y="396" width="118" height="19" fill="#ffffff" /><text text-anchor="start" x="1328" y="411" fill="rgb(15,15,15)" class="NodeDefault">links on</text></g><g onmouseover="hooverOption(1,2);" onclick="setOption(1,2);"><rect id="Menu1Opt2" x="1321" y="415" width="118" height="19" fill="#ffffff" /><text text-anchor="start" x="1328" y="429" fill="rgb(15,15,15)" class="NodeDefault">links off</text></g></g><g id="save_panel" transform="translate(0,0)"></g><g id='save_panel'></g>
+<script><![CDATA[statsOnOff(9);]]></script></svg>
